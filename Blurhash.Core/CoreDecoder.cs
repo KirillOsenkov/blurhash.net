@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Blurhash.Core
@@ -53,19 +54,23 @@ namespace Blurhash.Core
                         {
                             var substring = blurhash.Substring(2, 4);
                             var value = substring.DecodeBase83Integer();
-                            coefficients[x, y] = DecodeDc(value);
+                            var pixel = DecodeDc(value);
+                            coefficients[x, y] = pixel;
                         }
                         else
                         {
                             var substring = blurhash.Substring(4 + i * 2, 2);
                             var value = substring.DecodeBase83Integer();
-                            coefficients[x, y] = DecodeAc(value, maximumValue * punch);
+                            var pixel = DecodeAc(value, maximumValue * punch);
+                            coefficients[x, y] = pixel;
                         }
 
                         i++;
                     }
                 }
             }
+
+            string str = DumpCoefficients(coefficients);
 
             var pixels = new Pixel[outputWidth, outputHeight];
             var pixelCount = outputHeight * outputWidth;
@@ -89,6 +94,55 @@ namespace Blurhash.Core
                 });
  
             return pixels;
+        }
+
+        private string DumpCoefficients(Pixel[,] coefficients)
+        {
+            var x = coefficients.GetLength(0);
+            var y = coefficients.GetLength(1);
+
+            var r = new StringBuilder();
+            var g = new StringBuilder();
+            var b = new StringBuilder();
+
+            r.Append("Number[,] coefficientsR = new[,] {");
+            g.Append("Number[,] coefficientsG = new[,] {");
+            b.Append("Number[,] coefficientsB = new[,] {");
+            for (int i = 0; i < x; i++)
+            {
+                if (i > 0)
+                {
+                    r.Append(", ");
+                    g.Append(", ");
+                    b.Append(", ");
+                }
+
+                r.Append("{");
+                g.Append("{");
+                b.Append("{");
+                for (int j = 0; j < y; j++)
+                {
+                    if (j > 0)
+                    {
+                        r.Append(", ");
+                        g.Append(", ");
+                        b.Append(", ");
+                    }
+
+                    var pixel = coefficients[i, j];
+                    r.Append(pixel.Red);
+                    g.Append(pixel.Green);
+                    b.Append(pixel.Blue);
+                }
+                r.Append("}");
+                g.Append("}");
+                b.Append("}");
+            }
+            r.Append("};");
+            g.Append("};");
+            b.Append("};");
+
+            return r.ToString() + "\n" + g.ToString() + "\n" + b.ToString();
         }
 
         private Pixel DecodePixel(
